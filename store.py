@@ -1,46 +1,102 @@
-from typing import List, Tuple
 from products import Product
 
-
 class Store:
-    """Represents a store that manages products."""
+    """
+    Manages a collection of products in the store.
+    """
+    def __init__(self, list_of_products: list):
+        """
+        Initialize the store with a list of products.
 
-    def __init__(self, products: List[Product]) -> None:
-        """Initializes the store with a list of products."""
-        self.products = products
+        Args:
+            list_of_products (list): A list containing Product instances.
 
-    def add_product(self, product: Product) -> None:
-        """Adds a product to the store."""
-        self.products.append(product)
+        Raises:
+            TypeError: If list_of_products is not a list or if items are not valid Product instances.
+        """
+        if not isinstance(list_of_products, list):
+            raise TypeError("list_of_products must be a list.")
+        for item in list_of_products:
+            if not hasattr(item, "buy"):
+                raise TypeError("All items must be product instances.")
+        self.list_of_products = list_of_products
 
-    def remove_product(self, product: Product) -> None:
-        """Removes a product from the store if it exists."""
-        if product in self.products:
-            self.products.remove(product)
+    def add_product(self, product):
+        """
+        Add a product to the store.
+
+        Args:
+            product (Product): The product instance to add.
+
+        Raises:
+            ValueError: If the product is None or falsy.
+        """
+        if not product:
+            raise ValueError("Product should not be empty.")
+        self.list_of_products.append(product)
+        print(f"Added {product.show()} to the store.")
+
+    def remove_product(self, product):
+        """
+        Remove a product from the store.
+
+        Args:
+            product (Product): The product instance to remove.
+
+        Raises:
+            ValueError: If the product is None or not found in the store.
+        """
+        if not product:
+            raise ValueError("Product should not be empty.")
+        if product in self.list_of_products:
+            self.list_of_products.remove(product)
+        else:
+            raise ValueError("Product not found in the store.")
 
     def get_total_quantity(self) -> int:
-        """Returns the total quantity of all products in the store."""
-        return sum(product.get_quantity() for product in self.products)
+        """
+        Calculate the total quantity of all products in the store.
 
-    def get_all_products(self) -> List[Product]:
-        """Returns a list of active products in the store."""
-        return [product for product in self.products if product.is_active()]
+        Returns:
+            int: The sum of the quantities of all products.
+        """
+        return sum(product.quantity for product in self.list_of_products)
 
-    def order(self, shopping_list: List[Tuple[Product, int]]) -> float:
-        """Processes an order and returns the total cost."""
-        total_cost = sum(product.buy(quantity) for product, quantity in shopping_list)
-        return total_cost
+    def get_all_products(self) -> list:
+        """
+        Retrieve all active products from the store.
 
+        Returns:
+            list: A list of active Product instances.
+        """
+        return [product for product in self.list_of_products if product.active]
 
-if __name__ == "__main__":
-    product_list = [
-        Product("MacBook Air M2", price=1450, quantity=100),
-        Product("Bose QuietComfort Earbuds", price=250, quantity=500),
-        Product("Google Pixel 7", price=500, quantity=250),
-    ]
+    def order(self, shopping_list: list) -> float:
+        """
+        Process an order based on the provided shopping list.
 
-    best_buy = Store(product_list)
-    products = best_buy.get_all_products()
+        Args:
+            shopping_list (list): A list of tuples, where each tuple contains a Product and the quantity to purchase.
 
-    print(best_buy.get_total_quantity())  # Prints total quantity of all products
-    print(best_buy.order([(products[0], 1), (products[1], 2)]))  # Processes order
+        Returns:
+            float: The total price for the order.
+
+        Raises:
+            ValueError: If the shopping list is improperly formatted or if any product's quantity is insufficient.
+        """
+        if not all(isinstance(item, tuple) and len(item) == 2 for item in shopping_list):
+            raise ValueError("Shopping list must contain tuples of (Product, quantity).")
+        total_price = 0.0
+        # Validate each item before processing the order.
+        for product, quantity in shopping_list:
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive.")
+            if quantity > product.quantity:
+                raise ValueError(
+                    f"Not enough quantity for product {product.name}. "
+                    f"Requested: {quantity}, Available: {product.quantity}"
+                )
+        # Process the order.
+        for product, quantity in shopping_list:
+            total_price += product.buy(quantity)
+        return total_price
